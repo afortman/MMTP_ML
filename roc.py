@@ -1,5 +1,5 @@
 import ROOT
-from ROOT import TCanvas, TGraph, TFile
+from ROOT import TCanvas, TGraph, TFile, TH1F
 from ROOT import gROOT
 from array import array
 
@@ -7,7 +7,10 @@ from array import array
 ##https://root.cern.ch/doc/master/classTGraphPainter.html
 
 
-def FindPoints(fsig, fbkg):
+chisquare = False
+
+
+def FindCurveDTheta(fsig, fbkg):
     
     ####### get trees ##
     tr_sig   = fsig.Get("hazel")
@@ -15,6 +18,7 @@ def FindPoints(fsig, fbkg):
     
     sig_dtheta = []
     bkg_dtheta = []
+
     
     ########### get lists of delta thetas from each tree ##
     for ent1 in range(tr_sig.GetEntries()):
@@ -40,6 +44,44 @@ def FindPoints(fsig, fbkg):
                 bkg += 1
         sig_eff.append( float(sig)/len(sig_dtheta) )
         bkg_rej.append( 1.0 - float(bkg)/len(bkg_dtheta) )
+
+    return [sig_eff, bkg_rej, sig_dtheta, bkg_dtheta]
+
+
+def FindCurveChi2(fsig, fbkg):
+    
+    ####### get trees ##
+    tr_sig   = fsig.Get("hazel")
+    tr_bkg   = fbkg.Get("hazel")
+    
+    sig_chi2 = []
+    bkg_chi2 = []
+    
+    ########### get lists of chi2/NDF from each tree ##
+    for ent1 in range(tr_sig.GetEntries()):
+        _ = tr_sig.GetEntry(ent1)
+        sig_chi2.append(tr_sig.chi2)
+    
+    for ent2 in range(tr_bkg.GetEntries()):
+        _ = tr_bkg.GetEntry(ent2)
+        bkg_chi2.append(tr_bkg.chi2)
+    
+    ########## scan over different chi2/NDF and prepare arrays for plotting ##
+    sig_eff = array( 'd' )
+    bkg_rej = array( 'd' )
+    for ichi2 in range(0,1000):
+        cutoff = ichi2*0.001
+        sig = 0
+        bkg = 0
+        for chi2_sig in sig_chi2:
+            if abs(chi2_sig) < cutoff:
+                sig += 1
+        for chi2_bkg in bkg_chi2:
+            if abs(chi2_bkg) < cutoff:
+                bkg += 1
+        sig_eff.append( float(sig)/len(sig_chi2) )
+        bkg_rej.append( 1.0 - float(bkg)/len(bkg_chi2) )
+
     return [sig_eff, bkg_rej]
 
 
@@ -47,23 +89,56 @@ def main():
     c1 = TCanvas( 'roc', 'roc', 200, 10, 700, 500 )
     c1.cd()
     
-    ####### No Smearing ##############
-    points_0 = FindPoints(TFile("hazel_sig_smear0.root"), TFile("hazel_bkg_smear0.root"))
+    if chisquare:
+        
+        points_0 = FindCurveChi2(TFile("hazel_sig_smear0.root"), TFile("hazel_bkg_smear0.root"))
+        points_1 = FindCurveChi2(TFile("hazel_sig_smear1.root"), TFile("hazel_bkg_smear1.root"))
+        points_2 = FindCurveChi2(TFile("hazel_sig_smear2.root"), TFile("hazel_bkg_smear2.root"))
+    
+    else:
+    
+        ####### No Smearing ##############
+        points_0 = FindCurveDTheta(TFile("hazel_sig_smear0.root"), TFile("hazel_bkg_smear0.root"))
+        ####### 1 Strip Smearing ##############
+        points_1 = FindCurveDTheta(TFile("hazel_sig_smear1.root"), TFile("hazel_bkg_smear1.root"))
+        ####### 2 Strip Smearing ##############
+        points_2 = FindCurveDTheta(TFile("hazel_sig_smear2.root"), TFile("hazel_bkg_smear2.root"))
+        
     signal_eff_0 = points_0[0]
     background_rej_0 = points_0[1]
     n0 = len(signal_eff_0)
-
-    ####### 1 Strip Smearing ##############
-    points_1 = FindPoints(TFile("hazel_sig_smear1.root"), TFile("hazel_bkg_smear1.root"))
+        
     signal_eff_1 = points_1[0]
     background_rej_1 = points_1[1]
     n1 = len(signal_eff_1)
     
-    ####### 2 Strip Smearing ##############
-    points_2 = FindPoints(TFile("hazel_sig_smear2.root"), TFile("hazel_bkg_smear2.root"))
     signal_eff_2 = points_2[0]
     background_rej_2 = points_2[1]
     n2 = len(signal_eff_2)
+
+
+    h_sig_0 = TH1F("signal_dtheta","signal dtheta",100,-0.05,0.05)
+    h_bkg_0 = TH1F("background_0","background dtheta",100,-0.05,0.05)
+    for i in points_0[2]:
+        h_sig_0.Fill(i)
+    for i in points_0[3]:
+        h_bkg_0.Fill(i)
+
+    h_sig_1 = TH1F("signal_1","signal_1",100,-0.05,0.05)
+    h_bkg_1 = TH1F("background_1","background_1",100,-0.05,0.05)
+    for i in points_1[2]:
+        h_sig_1.Fill(i)
+    for i in points_1[3]:
+        h_bkg_1.Fill(i)
+
+    h_sig_2 = TH1F("signal_2","signal_2",100,-0.05,0.05)
+    h_bkg_2 = TH1F("background_2","background_2",100,-0.05,0.05)
+    for i in points_2[2]:
+        h_sig_2.Fill(i)
+    for i in points_2[3]:
+        h_bkg_2.Fill(i)
+
+
 
     c1.SetGrid()
 
@@ -73,7 +148,10 @@ def main():
     
     gr0.GetXaxis().SetTitle( 'Signal Efficiency' )
     gr0.GetYaxis().SetTitle( '1 - Background Efficiency' )
-    gr0.SetTitle( 'ROC Curve' )
+    if chisquare:
+        gr0.SetTitle( 'ROC Curve for Chi2/NDF' )
+    else:
+        gr0.SetTitle( 'ROC Curve for Delta Theta' )
     
     gr0.SetLineColor( 46 )
     gr0.SetLineWidth( 3 )
@@ -102,7 +180,40 @@ def main():
     
 
     c1.Update()
-    c1.SaveAs("%s.pdf" % (c1.GetName()))
+    if chisquare:
+        c1.SaveAs("%s.pdf" % (c1.GetName()+"_chi2"))
+    else:
+        c1.SaveAs("%s.pdf" % (c1.GetName()+"_dtheta"))
+
+    c2 = TCanvas( 'signal_dtheta', 'signal_dtheta' )
+    c2.cd()
+    h_sig_0.Draw("hist")
+    h_sig_1.SetLineColor(2)
+    h_sig_1.Draw("hist same")
+    h_sig_2.SetLineColor(3)
+    h_sig_2.Draw("hist same")
+    legend2 = ROOT.TLegend(0.1,0.7,0.48,0.9);
+    legend2.AddEntry( h_sig_0, '0 strip smearing', "l" );
+    legend2.AddEntry( h_sig_1, '1 strip smearing', "l");
+    legend2.AddEntry( h_sig_2, '2 strip smearing', "l");
+    legend2.Draw()
+    c2.Update()
+    c2.SaveAs("%s.pdf" % (c2.GetName()))
+
+    c3 = TCanvas( 'background_dtheta', 'background_dtheta' )
+    c3.cd()
+    h_bkg_0.Draw("hist")
+    h_bkg_1.SetLineColor(2)
+    h_bkg_1.Draw("hist same")
+    h_bkg_2.SetLineColor(3)
+    h_bkg_2.Draw("hist same")
+    legend3 = ROOT.TLegend(0.1,0.7,0.48,0.9);
+    legend3.AddEntry( h_bkg_0, '0 strip smearing', "l" );
+    legend3.AddEntry( h_bkg_1, '1 strip smearing', "l");
+    legend3.AddEntry( h_bkg_2, '2 strip smearing', "l");
+    legend3.Draw()
+    c3.Update()
+    c3.SaveAs("%s.pdf" % (c3.GetName()))
 
 if __name__ == "__main__":
     main()
