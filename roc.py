@@ -7,7 +7,8 @@ from array import array
 ##https://root.cern.ch/doc/master/classTGraphPainter.html
 
 
-chisquare = False
+chisquare = True
+hist = False
 
 
 def FindCurveDTheta(fsig, fbkg):
@@ -69,8 +70,9 @@ def FindCurveChi2(fsig, fbkg):
     ########## scan over different chi2/NDF and prepare arrays for plotting ##
     sig_eff = array( 'd' )
     bkg_rej = array( 'd' )
-    for ichi2 in range(0,1000):
-        cutoff = ichi2*0.001
+    chiscan = [k*0.0001 for k in range(0,11)]+[i*0.001 for i in range(1,1001)]+[j*0.01 for j in range(101,1200)]
+    for cutoff in chiscan:
+        #cutoff = ichi2*0.001
         sig = 0
         bkg = 0
         for chi2_sig in sig_chi2:
@@ -116,27 +118,28 @@ def main():
     background_rej_2 = points_2[1]
     n2 = len(signal_eff_2)
 
+    if hist:
 
-    h_sig_0 = TH1F("signal_dtheta","signal dtheta",100,-0.05,0.05)
-    h_bkg_0 = TH1F("background_0","background dtheta",100,-0.05,0.05)
-    for i in points_0[2]:
-        h_sig_0.Fill(i)
-    for i in points_0[3]:
-        h_bkg_0.Fill(i)
+        h_sig_0 = TH1F("signal_dtheta","signal dtheta",100,-0.05,0.05)
+        h_bkg_0 = TH1F("background_0","background dtheta",100,-0.05,0.05)
+        for i in points_0[2]:
+            h_sig_0.Fill(i)
+        for i in points_0[3]:
+            h_bkg_0.Fill(i)
 
-    h_sig_1 = TH1F("signal_1","signal_1",100,-0.05,0.05)
-    h_bkg_1 = TH1F("background_1","background_1",100,-0.05,0.05)
-    for i in points_1[2]:
-        h_sig_1.Fill(i)
-    for i in points_1[3]:
-        h_bkg_1.Fill(i)
+        h_sig_1 = TH1F("signal_1","signal_1",100,-0.05,0.05)
+        h_bkg_1 = TH1F("background_1","background_1",100,-0.05,0.05)
+        for i in points_1[2]:
+            h_sig_1.Fill(i)
+        for i in points_1[3]:
+            h_bkg_1.Fill(i)
 
-    h_sig_2 = TH1F("signal_2","signal_2",100,-0.05,0.05)
-    h_bkg_2 = TH1F("background_2","background_2",100,-0.05,0.05)
-    for i in points_2[2]:
-        h_sig_2.Fill(i)
-    for i in points_2[3]:
-        h_bkg_2.Fill(i)
+        h_sig_2 = TH1F("signal_2","signal_2",100,-0.05,0.05)
+        h_bkg_2 = TH1F("background_2","background_2",100,-0.05,0.05)
+        for i in points_2[2]:
+            h_sig_2.Fill(i)
+        for i in points_2[3]:
+            h_bkg_2.Fill(i)
 
 
 
@@ -185,35 +188,38 @@ def main():
     else:
         c1.SaveAs("%s.pdf" % (c1.GetName()+"_dtheta"))
 
-    c2 = TCanvas( 'signal_dtheta', 'signal_dtheta' )
-    c2.cd()
-    h_sig_0.Draw("hist")
-    h_sig_1.SetLineColor(2)
-    h_sig_1.Draw("hist same")
-    h_sig_2.SetLineColor(3)
-    h_sig_2.Draw("hist same")
-    legend2 = ROOT.TLegend(0.1,0.7,0.48,0.9);
-    legend2.AddEntry( h_sig_0, '0 strip smearing', "l" );
-    legend2.AddEntry( h_sig_1, '1 strip smearing', "l");
-    legend2.AddEntry( h_sig_2, '2 strip smearing', "l");
-    legend2.Draw()
-    c2.Update()
-    c2.SaveAs("%s.pdf" % (c2.GetName()))
 
-    c3 = TCanvas( 'background_dtheta', 'background_dtheta' )
-    c3.cd()
-    h_bkg_0.Draw("hist")
-    h_bkg_1.SetLineColor(2)
-    h_bkg_1.Draw("hist same")
-    h_bkg_2.SetLineColor(3)
-    h_bkg_2.Draw("hist same")
-    legend3 = ROOT.TLegend(0.1,0.7,0.48,0.9);
-    legend3.AddEntry( h_bkg_0, '0 strip smearing', "l" );
-    legend3.AddEntry( h_bkg_1, '1 strip smearing', "l");
-    legend3.AddEntry( h_bkg_2, '2 strip smearing', "l");
-    legend3.Draw()
-    c3.Update()
-    c3.SaveAs("%s.pdf" % (c3.GetName()))
+    if hist:
+
+        c2 = TCanvas( 'signal_dtheta', 'signal_dtheta' )
+        c2.cd()
+        h_sig_0.Draw("hist")
+        h_sig_1.SetLineColor(2)
+        h_sig_1.Draw("hist same")
+        h_sig_2.SetLineColor(3)
+        h_sig_2.Draw("hist same")
+        legend2 = ROOT.TLegend(0.1,0.7,0.48,0.9);
+        legend2.AddEntry( h_sig_0, '0 strip smearing', "l" );
+        legend2.AddEntry( h_sig_1, '1 strip smearing', "l");
+        legend2.AddEntry( h_sig_2, '2 strip smearing', "l");
+        legend2.Draw()
+        c2.Update()
+        c2.SaveAs("%s.pdf" % (c2.GetName()))
+
+        c3 = TCanvas( 'background_dtheta', 'background_dtheta' )
+        c3.cd()
+        h_bkg_0.Draw("hist")
+        h_bkg_1.SetLineColor(2)
+        h_bkg_1.Draw("hist same")
+        h_bkg_2.SetLineColor(3)
+        h_bkg_2.Draw("hist same")
+        legend3 = ROOT.TLegend(0.1,0.7,0.48,0.9);
+        legend3.AddEntry( h_bkg_0, '0 strip smearing', "l" );
+        legend3.AddEntry( h_bkg_1, '1 strip smearing', "l");
+        legend3.AddEntry( h_bkg_2, '2 strip smearing', "l");
+        legend3.Draw()
+        c3.Update()
+        c3.SaveAs("%s.pdf" % (c3.GetName()))
 
 if __name__ == "__main__":
     main()
