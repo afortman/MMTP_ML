@@ -100,7 +100,7 @@ def main():
         branches["EventNumHazel"][0] = EventNumHazel
         branches["EventNumGingko"][0] = ent
         branches["trigger_gingko"][0] = itr
-        branches["dtheta"][0] = tr.dtheta
+        branches["dtheta"][0] = tr.dtheta[itr]
 
         branches["Hit_plane0"][0] = -1
         branches["Hit_plane1"][0] = -1
