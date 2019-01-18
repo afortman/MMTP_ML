@@ -7,8 +7,8 @@ from array import array
 ##https://root.cern.ch/doc/master/classTGraphPainter.html
 
 
-chisquare = True
-hist = False
+chisquare = False
+hist = True
 
 
 def FindCurveDTheta(fsig, fbkg):
@@ -84,10 +84,11 @@ def FindCurveChi2(fsig, fbkg):
         sig_eff.append( float(sig)/len(sig_chi2) )
         bkg_rej.append( 1.0 - float(bkg)/len(bkg_chi2) )
 
-    return [sig_eff, bkg_rej]
+    return [sig_eff, bkg_rej, sig_chi2, bkg_chi2]
 
 
 def main():
+    
     c1 = TCanvas( 'roc', 'roc', 200, 10, 700, 500 )
     c1.cd()
     
@@ -96,6 +97,7 @@ def main():
         points_0 = FindCurveChi2(TFile("hazel_sig_smear0.root"), TFile("hazel_bkg_smear0.root"))
         points_1 = FindCurveChi2(TFile("hazel_sig_smear1.root"), TFile("hazel_bkg_smear1.root"))
         points_2 = FindCurveChi2(TFile("hazel_sig_smear2.root"), TFile("hazel_bkg_smear2.root"))
+        points_f = FindCurveChi2(TFile("hazel_sig_smearf.root"), TFile("hazel_bkg_smearf.root"))
     
     else:
     
@@ -105,6 +107,7 @@ def main():
         points_1 = FindCurveDTheta(TFile("hazel_sig_smear1.root"), TFile("hazel_bkg_smear1.root"))
         ####### 2 Strip Smearing ##############
         points_2 = FindCurveDTheta(TFile("hazel_sig_smear2.root"), TFile("hazel_bkg_smear2.root"))
+        points_f = FindCurveDTheta(TFile("hazel_sig_smearf.root"), TFile("hazel_bkg_smearf.root"))
         
     signal_eff_0 = points_0[0]
     background_rej_0 = points_0[1]
@@ -118,28 +121,42 @@ def main():
     background_rej_2 = points_2[1]
     n2 = len(signal_eff_2)
 
+    signal_eff_f = points_f[0]
+    background_rej_f = points_f[1]
+    nf = len(signal_eff_f)
+
     if hist:
 
-        h_sig_0 = TH1F("signal_dtheta","signal dtheta",100,-0.05,0.05)
-        h_bkg_0 = TH1F("background_0","background dtheta",100,-0.05,0.05)
+        h_sig_0 = TH1F("signal_dtheta","signal dtheta",1000,-0.05,0.05)
+        h_bkg_0 = TH1F("background_0","background dtheta",1000,-0.05,0.05)
         for i in points_0[2]:
             h_sig_0.Fill(i)
         for i in points_0[3]:
             h_bkg_0.Fill(i)
 
-        h_sig_1 = TH1F("signal_1","signal_1",100,-0.05,0.05)
-        h_bkg_1 = TH1F("background_1","background_1",100,-0.05,0.05)
+        h_sig_1 = TH1F("signal_1","signal_1",1000,-0.05,0.05)
+        h_bkg_1 = TH1F("background_1","background_1",1000,-0.05,0.05)
         for i in points_1[2]:
             h_sig_1.Fill(i)
         for i in points_1[3]:
             h_bkg_1.Fill(i)
 
-        h_sig_2 = TH1F("signal_2","signal_2",100,-0.05,0.05)
-        h_bkg_2 = TH1F("background_2","background_2",100,-0.05,0.05)
+        h_sig_2 = TH1F("signal_2","signal_2",1000,-0.05,0.05)
+        h_bkg_2 = TH1F("background_2","background_2",10000,-0.05,0.05)
         for i in points_2[2]:
             h_sig_2.Fill(i)
         for i in points_2[3]:
             h_bkg_2.Fill(i)
+
+        h_sig_f = TH1F("signal_f","signal_f",1000,-0.05,0.05)
+        h_bkg_f = TH1F("background_f","background_f",1000,-0.05,0.05)
+        for i in points_f[2]:
+            h_sig_f.Fill(i)
+        for i in points_f[3]:
+            h_bkg_f.Fill(i)
+
+                
+        
 
 
 
@@ -148,6 +165,7 @@ def main():
     gr0 = TGraph( n0, signal_eff_0, background_rej_0 )
     gr1 = TGraph( n1, signal_eff_1, background_rej_1 )
     gr2 = TGraph( n2, signal_eff_2, background_rej_2 )
+    grf = TGraph( nf, signal_eff_f, background_rej_f )
     
     gr0.GetXaxis().SetTitle( 'Signal Efficiency' )
     gr0.GetYaxis().SetTitle( '1 - Background Efficiency' )
@@ -171,14 +189,21 @@ def main():
     gr2.SetMarkerStyle( 29 )
     gr2.SetMarkerColor( 4 )
 
+    grf.SetLineColor( 12 )
+    grf.SetLineWidth( 3 )
+    grf.SetMarkerStyle( 31 )
+    grf.SetMarkerColor( 1 )
+
     gr0.Draw( 'APL' )
     gr1.Draw( 'PL' )
     gr2.Draw( 'PL' )
+    grf.Draw( 'PL' )
     
     legend = ROOT.TLegend(0.1,0.3,0.48,0.5);
-    legend.AddEntry( gr0, '10,000 events, 0 strip smearing', "lp" );
-    legend.AddEntry( gr1, '10,000 events, 1 strip smearing', "lp");
-    legend.AddEntry( gr2, '10,000 events, 2 strip smearing', "lp");
+    legend.AddEntry( gr0, '1M events, 0 strip smearing', "lp" );
+    legend.AddEntry( gr1, '1M events, 1 strip smearing', "lp");
+    legend.AddEntry( gr2, '1M events, 2 strip smearing', "lp");
+    legend.AddEntry( grf, '1M events, function smearing', "lp");
     legend.Draw()
     
 
@@ -198,10 +223,13 @@ def main():
         h_sig_1.Draw("hist same")
         h_sig_2.SetLineColor(3)
         h_sig_2.Draw("hist same")
+        h_sig_f.SetLineColor(1)
+        h_sig_f.Draw("hist same")
         legend2 = ROOT.TLegend(0.1,0.7,0.48,0.9);
         legend2.AddEntry( h_sig_0, '0 strip smearing', "l" );
         legend2.AddEntry( h_sig_1, '1 strip smearing', "l");
         legend2.AddEntry( h_sig_2, '2 strip smearing', "l");
+        legend2.AddEntry( h_sig_f, 'function smearing', "l");
         legend2.Draw()
         c2.Update()
         c2.SaveAs("%s.pdf" % (c2.GetName()))
@@ -213,10 +241,13 @@ def main():
         h_bkg_1.Draw("hist same")
         h_bkg_2.SetLineColor(3)
         h_bkg_2.Draw("hist same")
+        h_bkg_f.SetLineColor(1)
+        h_bkg_f.Draw("hist same")
         legend3 = ROOT.TLegend(0.1,0.7,0.48,0.9);
-        legend3.AddEntry( h_bkg_0, '0 strip smearing', "l" );
+        legend3.AddEntry( h_bkg_0, '0 strip smearing', "l");
         legend3.AddEntry( h_bkg_1, '1 strip smearing', "l");
         legend3.AddEntry( h_bkg_2, '2 strip smearing', "l");
+        legend3.AddEntry( h_bkg_f, 'function smearing', "l");
         legend3.Draw()
         c3.Update()
         c3.SaveAs("%s.pdf" % (c3.GetName()))

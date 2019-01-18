@@ -20,8 +20,8 @@ parser.add_option('-b', type='string', action='store',
                   dest='bkg',
                   help='Convention could be bkg for background only, default means signal only, sigbkg or both for both')
 
-parser.add_option('--smear', type='int', action='store',
-                  default = 0,
+parser.add_option('--smear', type='string', action='store',
+                  default = "0",
                   dest='smear',
                   help='Position resolution in strips')
 

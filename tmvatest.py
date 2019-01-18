@@ -1,21 +1,25 @@
 from ROOT import TMVA, TFile, TTree, TCut, TString
 TMVA.Tools.Instance()
 
-inputFile_sig = TFile.Open("hazel_sig_smear2.root")
-inputFile_bkg = TFile.Open("hazel_bkg_smear2.root")
-outputFile = TFile.Open("TMVAOutput.root", "RECREATE")
+##https://nbviewer.jupyter.org/github/iml-wg/tmvatutorials/blob/master/TMVA_DNN.ipynb
+##https://aholzner.wordpress.com/2011/08/27/a-tmva-example-in-pyroot/
+##https://root.cern.ch/download/doc/tmva/TMVAUsersGuide.pdf
+
+inputFile_sig = TFile.Open("bigfiles/hazel_sig_smearf.root")
+inputFile_bkg = TFile.Open("bigfiles/hazel_bkg_smearf.root")
+outputFile = TFile.Open("TMVAOutput_1M_smearf.root", "RECREATE")
 
 factory = TMVA.Factory("TMVAClassification", outputFile,
-                       "!V:!Silent:Color:!DrawProgressBar:AnalysisType=Classification" )
+                       "!V:!Silent:Color:DrawProgressBar:AnalysisType=Classification" )
 
 loader = TMVA.DataLoader("dataset")
 
-loader.AddVariable("EventNumHazel",'I')
-loader.AddVariable("EventNumGingko",'I')
-loader.AddVariable("trigger_gingko",'I')
-loader.AddVariable("iroad_x",'I')
-loader.AddVariable("iroad_u",'I')
-loader.AddVariable("iroad_v",'I')
+#loader.AddVariable("EventNumHazel",'I')
+#loader.AddVariable("EventNumGingko",'I')
+#loader.AddVariable("trigger_gingko",'I')
+#loader.AddVariable("iroad_x",'I')
+#loader.AddVariable("iroad_u",'I')
+#loader.AddVariable("iroad_v",'I')
 loader.AddVariable("Hit_plane0",'I')
 loader.AddVariable("Hit_plane1",'I')
 loader.AddVariable("Hit_plane2",'I')
@@ -25,8 +29,8 @@ loader.AddVariable("Hit_plane5",'I')
 loader.AddVariable("Hit_plane6",'I')
 loader.AddVariable("Hit_plane7",'I')
 loader.AddVariable("Hit_n",'I')
-loader.AddVariable("dtheta")
-loader.AddVariable("chi2")
+#loader.AddVariable("dtheta")
+#loader.AddVariable("chi2")
 
 tsignal = inputFile_sig.Get("hazel")
 tbackground = inputFile_bkg.Get("hazel")
@@ -61,15 +65,13 @@ dnnOptions.Append(trainingStrategyString)
 
 # Standard implementation, no dependencies.
 stdOptions =  dnnOptions + ":Architecture=CPU"
-factory.BookMethod(loader, TMVA.Types.kDNN, "DNN", stdOptions)
+factory.BookMethod(loader, TMVA.Types.kDNN, "DNN_1M_smearf", stdOptions)
 
 ##Boosted Decision Trees
-factory.BookMethod(loader,TMVA.Types.kBDT, "BDT",
-                   "!V:NTrees=200:MinNodeSize=2.5%:MaxDepth=2:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" )
+factory.BookMethod(loader,TMVA.Types.kBDT, "BDT_1M_smearf","!V:NTrees=200:MinNodeSize=2.5%:MaxDepth=2:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" )
 
 ##Multi-Layer Perceptron (Neural Network)
-factory.BookMethod(loader, TMVA.Types.kMLP, "MLP",
-                   "!H:!V:NeuronType=tanh:VarTransform=N:NCycles=100:HiddenLayers=N+5:TestRate=5:!UseRegulator" )
+factory.BookMethod(loader, TMVA.Types.kMLP, "MLP_1M_smearf","!H:!V:NeuronType=tanh:VarTransform=N:NCycles=100:HiddenLayers=N+5:TestRate=5:!UseRegulator" )
 
 # CPU implementation, using BLAS
 #cpuOptions = dnnOptions + ":Architecture=CPU"
@@ -82,4 +84,4 @@ factory.EvaluateAllMethods()
 
 c = factory.GetROCCurve(loader)
 c.Draw()
-c.SaveAs("roc_TMVA.pdf")
+c.SaveAs("roc/roc_TMVA_hits_smearf_1M.pdf")
