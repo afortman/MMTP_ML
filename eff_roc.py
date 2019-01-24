@@ -2,7 +2,7 @@ import ROOT
 from ROOT import TMVA, TFile, TCanvas, TGraph
 from array import array
 import sys
-from eff_roc_tools import FindPoint, FindCurveDNN, FindCurveBDT, FindCurveMLP, FindCurvekNN, FindCurveDTheta, FindCurveChi2
+from eff_roc_tools import FindPoint, FindCurveML, FindCurveDTheta, FindCurveChi2
 
 
 
@@ -111,10 +111,10 @@ for eff in effs:
         bkgdtheta.append( tr_bkg.dtheta )
         bkgchi2.append( tr_bkg.chi2 )
 
-    dnnCurve = FindCurveDNN(sigdnn, bkgdnn)
-    bdtCurve = FindCurveBDT(sigbdt, bkgbdt)
-    mlpCurve = FindCurveMLP(sigmlp, bkgmlp)
-    knnCurve = FindCurveDNN(sigknn, bkgknn)
+    dnnCurve = FindCurveML(sigdnn, bkgdnn, 0, 10001, 1, 0.0001)
+    bdtCurve = FindCurveML(sigbdt, bkgbdt, -1001, 1001, 10, 0.001)
+    mlpCurve = FindCurveML(sigmlp, bkgmlp, 0, 1001, 1, 0.001)
+    knnCurve = FindCurveML(sigknn, bkgknn, 0, 10001, 1, 0.0001)
     dthetaCurve = FindCurveDTheta(sigdtheta, bkgdtheta)
     chi2Curve = FindCurveChi2(sigchi2, bkgchi2)
 

@@ -16,80 +16,13 @@ def FindPoint(sig_eff, bkg_rej):
     return( sigpoint[0], bkgpoint[0] )
 
 
+############# SET UP ML ROC CURVES
 
-
-############# SET DNN
-
-def FindCurveDNN(siglist, bkglist):
+def FindCurveML(siglist, bkglist, minval, maxval, nsteps, cutsteps):
     sig_eff = array( 'd' )
     bkg_rej = array( 'd' )
-    for icut in range(0,10001,10):
-        #for cutoff in cutofflist:
-        cutoff = icut*0.0001
-        sig = 0
-        bkg = 0
-        for output in siglist:
-            if output > cutoff:
-                sig += 1
-        for output in bkglist:
-            if output > cutoff:
-                bkg += 1
-        sig_eff.append( float(sig)/len(siglist) )
-        bkg_rej.append( 1.0 - float(bkg)/len(bkglist) )
-    return [sig_eff, bkg_rej]
-
-
-############## SET BDT
-
-def FindCurveBDT(siglist, bkglist):
-    sig_eff = array( 'd' )
-    bkg_rej = array( 'd' )
-    for icut in range(-1001,1001,10):
-        #for cutoff in cutofflist:
-        cutoff = icut*0.001
-        sig = 0
-        bkg = 0
-        for output in siglist:
-            if output > cutoff:
-                sig += 1
-        for output in bkglist:
-            if output > cutoff:
-                bkg += 1
-        sig_eff.append( float(sig)/len(siglist) )
-        bkg_rej.append( 1.0 - float(bkg)/len(bkglist) )
-    return [sig_eff, bkg_rej]
-
-
-
-##############  SET MLP
-
-def FindCurveMLP(siglist, bkglist):
-    sig_eff = array( 'd' )
-    bkg_rej = array( 'd' )
-    for icut in range(0,1001):
-        #for cutoff in cutofflist:
-        cutoff = icut*0.001
-        sig = 0
-        bkg = 0
-        for output in siglist:
-            if output > cutoff:
-                sig += 1
-        for output in bkglist:
-            if output > cutoff:
-                bkg += 1
-        sig_eff.append( float(sig)/len(siglist) )
-        bkg_rej.append( 1.0 - float(bkg)/len(bkglist) )
-    return [sig_eff, bkg_rej]
-
-
-################ SET kNN
-
-def FindCurvekNN(siglist, bkglist):
-    sig_eff = array( 'd' )
-    bkg_rej = array( 'd' )
-    for icut in range(0,2001):
-        #for cutoff in cutofflist:
-        cutoff = icut*0.001
+    for icut in range(minval,maxval,nsteps):
+        cutoff = icut*cutsteps
         sig = 0
         bkg = 0
         for output in siglist:
