@@ -1,10 +1,10 @@
 import ROOT
-from ROOT import TMVA, TFile, TCanvas, TGraph
+from ROOT import TMVA, TFile, TCanvas, TGraph, TH1F
 from array import array
 import sys
-from eff_roc_tools import FindPoint, FindCurveML, FindCurveDTheta, FindCurveChi2
+from eff_roc_tools import FindPoint, FindCurveML, FindCurveDTheta, FindCurveChi2, MakeHists, MakeRoc
 
-
+######## run like: python eff_roc.py -n 10k --hist --roc ###########
 
 from optparse import OptionParser
 parser = OptionParser()
@@ -14,9 +14,19 @@ parser.add_option('-n', type='string', action='store',
                   dest='n',
                   help='number of events to evaluate over, 10k or 100k or 1M etc')
 
+parser.add_option('--hist', action='store_true',
+                  default=False,
+                  dest='hist',
+                  help='Do you want a ton of histograms to be made')
+
+parser.add_option('--roc', action='store_true',
+                  default=False,
+                  dest='roc',
+                  help='Do you want a ton of roc curves to be made')
+
+
 (options, args) = parser.parse_args()
 argv = []
-
 
 effs = [90,91,92,93,94,95,96,97,98,99,100]
 
@@ -117,6 +127,48 @@ for eff in effs:
     knnCurve = FindCurveML(sigknn, bkgknn, 0, 10001, 1, 0.0001)
     dthetaCurve = FindCurveDTheta(sigdtheta, bkgdtheta)
     chi2Curve = FindCurveChi2(sigchi2, bkgchi2)
+        
+    if options.hist:
+
+        (hsig_dnn, hbkg_dnn, canv_dnn ,legdnn) = MakeHists(sigdnn, bkgdnn,0.,1.,"dnn_"+str(options.n)+"_e"+str(eff))
+        legdnn.Draw()
+        canv_dnn.SaveAs("hists/%s.pdf" % (canv_dnn.GetName()))
+        
+        (hsig_bdt, hbkg_bdt, canv_bdt, legbdt) = MakeHists(sigbdt, bkgbdt,-1.,1.,"bdt_"+str(options.n)+"_e"+str(eff))
+        legbdt.Draw()
+        canv_bdt.SaveAs("hists/%s.pdf" % (canv_bdt.GetName()))
+        
+        (hsig_mlp, hbkg_mlp, canv_mlp, legmlp) = MakeHists(sigmlp, bkgmlp,0.,1.,"mlp_"+str(options.n)+"_e"+str(eff))
+        legmlp.Draw()
+        canv_mlp.SaveAs("hists/%s.pdf" % (canv_mlp.GetName()))
+        
+        (hsig_knn, hbkg_knn, canv_knn, legknn) = MakeHists(sigknn, bkgknn,0.,1.,"knn_"+str(options.n)+"_e"+str(eff))
+        legknn.Draw()
+        canv_knn.SaveAs("hists/%s.pdf" % (canv_knn.GetName()))
+        
+        (hsig_dtheta, hbkg_dtheta, canv_dtheta, legdtheta) = MakeHists(sigdtheta, bkgdtheta,-0.05,0.05,"dtheta_"+str(options.n)+"_e"+str(eff))
+        legdtheta.Draw()
+        canv_dtheta.SaveAs("hists/%s.pdf" % (canv_dtheta.GetName()))
+        
+        (hsig_chi2, hbkg_chi2, canv_chi2, legchi2) = MakeHists(sigchi2, bkgchi2,0.,5.,"chi2_"+str(options.n)+"_e"+str(eff))
+        legchi2.Draw()
+        canv_chi2.SaveAs("hists/%s.pdf" % (canv_chi2.GetName()))
+
+    if options.roc:
+
+        (roc_dnn, roc_canv_dnn) = MakeRoc(dnnCurve[0], dnnCurve[1],"dnn_"+str(options.n)+"_e"+str(eff))
+        roc_canv_dnn.SaveAs("hists/%s.pdf" % (roc_canv_dnn.GetName()))
+        (roc_bdt, roc_canv_bdt) = MakeRoc(bdtCurve[0], bdtCurve[1],"bdt_"+str(options.n)+"_e"+str(eff))
+        roc_canv_bdt.SaveAs("hists/%s.pdf" % (roc_canv_bdt.GetName()))
+        (roc_mlp, roc_canv_mlp) = MakeRoc(mlpCurve[0], mlpCurve[1] ,"mlp_"+str(options.n)+"_e"+str(eff))
+        roc_canv_mlp.SaveAs("hists/%s.pdf" % (roc_canv_mlp.GetName()))
+        (roc_knn, roc_canv_knn) = MakeRoc(knnCurve[0], knnCurve[1],"knn_"+str(options.n)+"_e"+str(eff))
+        roc_canv_knn.SaveAs("hists/%s.pdf" % (roc_canv_knn.GetName()))
+        (roc_dtheta, roc_canv_dtheta) = MakeRoc(dthetaCurve[0], dthetaCurve[1],"dtheta_"+str(options.n)+"_e"+str(eff))
+        roc_canv_dtheta.SaveAs("hists/%s.pdf" % (roc_canv_dtheta.GetName()))
+        (roc_chi2, roc_canv_chi2) = MakeRoc(chi2Curve[0], chi2Curve[1],"chi2_"+str(options.n)+"_e"+str(eff))
+        roc_canv_chi2.SaveAs("hists/%s.pdf" % (roc_canv_chi2.GetName()))
+
 
     dnnPoint = FindPoint( dnnCurve[0], dnnCurve[1] )
     bdtPoint = FindPoint( bdtCurve[0], bdtCurve[1] )
@@ -133,12 +185,13 @@ for eff in effs:
     #print( dthetaPoint[0], dthetaPoint[1] )
     #print( chi2Point[0], chi2Point[1] )
 
-    bkgrej_dnn.append( dnnPoint[1] )
-    bkgrej_bdt.append( bdtPoint[1] )
-    bkgrej_mlp.append( mlpPoint[1] )
-    bkgrej_knn.append( knnPoint[1] )
-    bkgrej_dtheta.append( dthetaPoint[1] )
-    bkgrej_chi2.append( chi2Point[1] )
+############### PLOTTING BKG EFFICIENCY INSTEAD OF BKG REJECTION
+    bkgrej_dnn.append( 1.0 - dnnPoint[1] )
+    bkgrej_bdt.append( 1.0 - bdtPoint[1] )
+    bkgrej_mlp.append( 1.0 - mlpPoint[1] )
+    bkgrej_knn.append( 1.0 - knnPoint[1] )
+    bkgrej_dtheta.append( 1.0 - dthetaPoint[1] )
+    bkgrej_chi2.append( 1.0 - chi2Point[1] )
     efficiencies.append( eff*0.01 )
 
 
@@ -147,7 +200,7 @@ for eff in effs:
 #print(bkgrej_chi2)
 
 
-c1 = TCanvas( 'hit_efficiency', 'hit_efficiency', 200, 10, 700, 500 )
+c1 = TCanvas( 'detector_efficiency', 'detector_efficiency', 200, 10, 700, 500 )
 c1.cd()
 c1.SetGrid()
 
@@ -159,10 +212,10 @@ gr4 = TGraph( len(efficiencies), efficiencies, bkgrej_dtheta )
 gr5 = TGraph( len(efficiencies), efficiencies, bkgrej_chi2 )
 
 
-gr0.GetXaxis().SetTitle( 'Hit Efficiency' )
-gr0.GetYaxis().SetTitle( '1 - Background Efficiency' )
+gr0.GetXaxis().SetTitle( 'Detector Efficiency' )
+gr0.GetYaxis().SetTitle( 'Background Efficiency' )
 gr0.GetYaxis().SetRangeUser(0.0,1.0)
-gr0.SetTitle( "Background Rejection at 95% Signal Efficiency" )
+gr0.SetTitle( "Background Efficiency at 95% Signal Efficiency" )
 
 
 gr0.SetLineColor( 46 )
@@ -202,7 +255,7 @@ gr3.Draw( 'PL' )
 gr4.Draw( 'PL' )
 gr5.Draw( 'PL' )
 
-legend = ROOT.TLegend(0.1,0.1,0.45,0.25);
+legend = ROOT.TLegend(0.1,0.75,0.45,0.9);
 legend.SetNColumns(2)
 legend.AddEntry( gr0, 'DNN', "lp" );
 legend.AddEntry( gr3, 'kNN', "lp");
