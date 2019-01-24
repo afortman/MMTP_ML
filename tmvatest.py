@@ -20,12 +20,12 @@ argv = []
 
 
 
-inputFile_sig = TFile.Open("efftesting/hazel_both_smearf_1M_35ns_e"+str(options.eff)+".root")
-inputFile_bkg = TFile.Open("efftesting/hazel_bkg_smearf_1M_35ns_e"+str(options.eff)+".root")
+inputFile_sig = TFile.Open("/home/net3/afortman/projects/hotpot/oct_sim/efftesting/hazel_both_smearf_1M_35ns_e"+str(options.eff)+".root")
+inputFile_bkg = TFile.Open("/home/net3/afortman/projects/hotpot/oct_sim/efftesting/hazel_bkg_smearf_1M_35ns_e"+str(options.eff)+".root")
 outputFile = TFile.Open("TMVAOutput_sigbkg_e"+str(options.eff)+".root", "RECREATE")
 
 factory = TMVA.Factory("TMVAClassification", outputFile,
-                       "!V:!Silent:Color:DrawProgressBar:AnalysisType=Classification" )
+                       "!V:!Silent:Color:!DrawProgressBar:AnalysisType=Classification" )
 
 loader = TMVA.DataLoader("dataset_e"+str(options.eff))
 

@@ -142,9 +142,9 @@ for eff in effs:
     efficiencies.append( eff*0.01 )
 
 
-print(efficiencies)
-print(bkgrej_dtheta)
-print(bkgrej_chi2)
+#print(efficiencies)
+#print(bkgrej_dtheta)
+#print(bkgrej_chi2)
 
 
 c1 = TCanvas( 'hit_efficiency', 'hit_efficiency', 200, 10, 700, 500 )
@@ -202,16 +202,17 @@ gr3.Draw( 'PL' )
 gr4.Draw( 'PL' )
 gr5.Draw( 'PL' )
 
-legend = ROOT.TLegend(0.1,0.65,0.38,0.9);
+legend = ROOT.TLegend(0.1,0.1,0.45,0.25);
+legend.SetNColumns(2)
 legend.AddEntry( gr0, 'DNN', "lp" );
-legend.AddEntry( gr1, 'BDT', "lp");
-legend.AddEntry( gr2, 'MLP', "lp");
 legend.AddEntry( gr3, 'kNN', "lp");
+legend.AddEntry( gr1, 'BDT', "lp");
 legend.AddEntry( gr4, 'Delta Theta', "lp");
+legend.AddEntry( gr2, 'MLP', "lp");
 legend.AddEntry( gr5, 'Chi Squared', "lp");
 legend.Draw()
 
 c1.Update()
 
-c1.SaveAs("%s.pdf" % (c1.GetName()+"_1M_10k"))
+c1.SaveAs("%s.pdf" % (c1.GetName()+"_1M_"+str(options.n)))
 
