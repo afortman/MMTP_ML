@@ -28,10 +28,18 @@ def MakeHists(siglist, bkglist, minval, maxval, name):
 
     canv = TCanvas('hists_'+str(name),'hists_'+str(name), 200, 10, 700, 500 )
     canv.cd()
-    hsig.Draw("hist")
+    scale_sig = 1.0/hsig.Integral()
+    scale_bkg = 1.0/hbkg.Integral()
+    hsig.Scale(scale_sig)
+    hbkg.Scale(scale_bkg)
     hbkg.SetLineColor(2)
-    hbkg.Draw("hist same")
-    leg = ROOT.TLegend(0.1,0.7,0.48,0.9);
+    if "bdt" in name:
+        hbkg.Draw("hist e")
+        hsig.Draw("hist e same")
+    else:
+        hsig.Draw("hist e")
+        hbkg.Draw("hist e same")
+    leg = ROOT.TLegend(0.1,0.7,0.38,0.9);
     leg.AddEntry( hsig, 'signal', "l" );
     leg.AddEntry( hbkg, 'background', "l");
     leg.Draw()

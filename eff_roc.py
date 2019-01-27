@@ -28,6 +28,9 @@ parser.add_option('--roc', action='store_true',
 (options, args) = parser.parse_args()
 argv = []
 
+ROOT.gStyle.SetPadTickX(1)
+ROOT.gStyle.SetPadTickY(1)
+
 effs = [90,91,92,93,94,95,96,97,98,99,100]
 
 xlist = ["Hit_plane0","Hit_plane1","Hit_plane6","Hit_plane7"]
@@ -39,7 +42,7 @@ planes = xlist + uvlist
 bkgrej_dnn = array( 'd' )
 bkgrej_bdt = array( 'd' )
 bkgrej_mlp = array( 'd' )
-bkgrej_knn = array( 'd' )
+#bkgrej_knn = array( 'd' )
 bkgrej_dtheta = array( 'd' )
 bkgrej_chi2 = array( 'd' )
 efficiencies = array( 'd' )
@@ -68,12 +71,12 @@ for eff in effs:
     reader.BookMVA("DNN","dataset_e"+str(eff)+"/weights/TMVAClassification_DNN.weights.xml")
     reader.BookMVA("BDT","dataset_e"+str(eff)+"/weights/TMVAClassification_BDT.weights.xml")
     reader.BookMVA("MLP","dataset_e"+str(eff)+"/weights/TMVAClassification_MLP.weights.xml")
-    reader.BookMVA("kNN","dataset_e"+str(eff)+"/weights/TMVAClassification_kNN.weights.xml")
+    #reader.BookMVA("kNN","dataset_e"+str(eff)+"/weights/TMVAClassification_kNN.weights.xml")
 
     sigdnn = []
     sigbdt = []
     sigmlp = []
-    sigknn = []
+    #sigknn = []
     sigdtheta = []
     sigchi2 = []
 
@@ -91,7 +94,7 @@ for eff in effs:
         sigdnn.append( reader.EvaluateMVA("DNN") )
         sigbdt.append( reader.EvaluateMVA("BDT") )
         sigmlp.append( reader.EvaluateMVA("MLP") )
-        sigknn.append( reader.EvaluateMVA("kNN") )
+        #sigknn.append( reader.EvaluateMVA("kNN") )
         sigdtheta.append( tr_sig.dtheta )
         sigchi2.append( tr_sig.chi2 )
 
@@ -99,7 +102,7 @@ for eff in effs:
     bkgdnn = []
     bkgbdt = []
     bkgmlp = []
-    bkgknn = []
+    #bkgknn = []
     bkgdtheta = []
     bkgchi2 = []
 
@@ -117,14 +120,14 @@ for eff in effs:
         bkgdnn.append( reader.EvaluateMVA("DNN") )
         bkgbdt.append( reader.EvaluateMVA("BDT") )
         bkgmlp.append( reader.EvaluateMVA("MLP") )
-        bkgknn.append( reader.EvaluateMVA("kNN") )
+        #bkgknn.append( reader.EvaluateMVA("kNN") )
         bkgdtheta.append( tr_bkg.dtheta )
         bkgchi2.append( tr_bkg.chi2 )
 
     dnnCurve = FindCurveML(sigdnn, bkgdnn, 0, 10001, 1, 0.0001)
     bdtCurve = FindCurveML(sigbdt, bkgbdt, -1001, 1001, 10, 0.001)
     mlpCurve = FindCurveML(sigmlp, bkgmlp, 0, 1001, 1, 0.001)
-    knnCurve = FindCurveML(sigknn, bkgknn, 0, 10001, 1, 0.0001)
+    #knnCurve = FindCurveML(sigknn, bkgknn, 0, 10001, 1, 0.0001)
     dthetaCurve = FindCurveDTheta(sigdtheta, bkgdtheta)
     chi2Curve = FindCurveChi2(sigchi2, bkgchi2)
         
@@ -142,9 +145,9 @@ for eff in effs:
         legmlp.Draw()
         canv_mlp.SaveAs("hists/%s.pdf" % (canv_mlp.GetName()))
         
-        (hsig_knn, hbkg_knn, canv_knn, legknn) = MakeHists(sigknn, bkgknn,0.,1.,"knn_"+str(options.n)+"_e"+str(eff))
-        legknn.Draw()
-        canv_knn.SaveAs("hists/%s.pdf" % (canv_knn.GetName()))
+        #(hsig_knn, hbkg_knn, canv_knn, legknn) = MakeHists(sigknn, bkgknn,0.,1.,"knn_"+str(options.n)+"_e"+str(eff))
+        #legknn.Draw()
+        #canv_knn.SaveAs("hists/%s.pdf" % (canv_knn.GetName()))
         
         (hsig_dtheta, hbkg_dtheta, canv_dtheta, legdtheta) = MakeHists(sigdtheta, bkgdtheta,-0.05,0.05,"dtheta_"+str(options.n)+"_e"+str(eff))
         legdtheta.Draw()
@@ -162,8 +165,8 @@ for eff in effs:
         roc_canv_bdt.SaveAs("hists/%s.pdf" % (roc_canv_bdt.GetName()))
         (roc_mlp, roc_canv_mlp) = MakeRoc(mlpCurve[0], mlpCurve[1] ,"mlp_"+str(options.n)+"_e"+str(eff))
         roc_canv_mlp.SaveAs("hists/%s.pdf" % (roc_canv_mlp.GetName()))
-        (roc_knn, roc_canv_knn) = MakeRoc(knnCurve[0], knnCurve[1],"knn_"+str(options.n)+"_e"+str(eff))
-        roc_canv_knn.SaveAs("hists/%s.pdf" % (roc_canv_knn.GetName()))
+        #(roc_knn, roc_canv_knn) = MakeRoc(knnCurve[0], knnCurve[1],"knn_"+str(options.n)+"_e"+str(eff))
+        #roc_canv_knn.SaveAs("hists/%s.pdf" % (roc_canv_knn.GetName()))
         (roc_dtheta, roc_canv_dtheta) = MakeRoc(dthetaCurve[0], dthetaCurve[1],"dtheta_"+str(options.n)+"_e"+str(eff))
         roc_canv_dtheta.SaveAs("hists/%s.pdf" % (roc_canv_dtheta.GetName()))
         (roc_chi2, roc_canv_chi2) = MakeRoc(chi2Curve[0], chi2Curve[1],"chi2_"+str(options.n)+"_e"+str(eff))
@@ -173,7 +176,7 @@ for eff in effs:
     dnnPoint = FindPoint( dnnCurve[0], dnnCurve[1] )
     bdtPoint = FindPoint( bdtCurve[0], bdtCurve[1] )
     mlpPoint = FindPoint( mlpCurve[0], mlpCurve[1] )
-    knnPoint = FindPoint( knnCurve[0], knnCurve[1] )
+    #knnPoint = FindPoint( knnCurve[0], knnCurve[1] )
     dthetaPoint = FindPoint( list(reversed(dthetaCurve[0])), list(reversed(dthetaCurve[1])) )
     chi2Point = FindPoint( list(reversed(chi2Curve[0])), list(reversed(chi2Curve[1])) )
 
@@ -189,7 +192,7 @@ for eff in effs:
     bkgrej_dnn.append( 1.0 - dnnPoint[1] )
     bkgrej_bdt.append( 1.0 - bdtPoint[1] )
     bkgrej_mlp.append( 1.0 - mlpPoint[1] )
-    bkgrej_knn.append( 1.0 - knnPoint[1] )
+    #bkgrej_knn.append( 1.0 - knnPoint[1] )
     bkgrej_dtheta.append( 1.0 - dthetaPoint[1] )
     bkgrej_chi2.append( 1.0 - chi2Point[1] )
     efficiencies.append( eff*0.01 )
@@ -207,7 +210,7 @@ c1.SetGrid()
 gr0 = TGraph( len(efficiencies), efficiencies, bkgrej_dnn )
 gr1 = TGraph( len(efficiencies), efficiencies, bkgrej_bdt )
 gr2 = TGraph( len(efficiencies), efficiencies, bkgrej_mlp )
-gr3 = TGraph( len(efficiencies), efficiencies, bkgrej_knn )
+#gr3 = TGraph( len(efficiencies), efficiencies, bkgrej_knn )
 gr4 = TGraph( len(efficiencies), efficiencies, bkgrej_dtheta )
 gr5 = TGraph( len(efficiencies), efficiencies, bkgrej_chi2 )
 
@@ -233,10 +236,10 @@ gr2.SetLineWidth( 1 )
 gr2.SetMarkerStyle( 29 )
 gr2.SetMarkerColor( 4 )
 
-gr3.SetLineColor( 12 )
-gr3.SetLineWidth( 1 )
-gr3.SetMarkerStyle( 31 )
-gr3.SetMarkerColor( 1 )
+#gr3.SetLineColor( 12 )
+#gr3.SetLineWidth( 1 )
+#gr3.SetMarkerStyle( 31 )
+#gr3.SetMarkerColor( 1 )
 
 gr4.SetLineColor( 6 )
 gr4.SetLineWidth( 1 )
@@ -251,14 +254,14 @@ gr5.SetMarkerColor( 7 )
 gr0.Draw( 'APL' )
 gr1.Draw( 'PL' )
 gr2.Draw( 'PL' )
-gr3.Draw( 'PL' )
+#gr3.Draw( 'PL' )
 gr4.Draw( 'PL' )
 gr5.Draw( 'PL' )
 
 legend = ROOT.TLegend(0.1,0.75,0.45,0.9);
 legend.SetNColumns(2)
 legend.AddEntry( gr0, 'DNN', "lp" );
-legend.AddEntry( gr3, 'kNN', "lp");
+#legend.AddEntry( gr3, 'kNN', "lp");
 legend.AddEntry( gr1, 'BDT', "lp");
 legend.AddEntry( gr4, 'Delta Theta', "lp");
 legend.AddEntry( gr2, 'MLP', "lp");
@@ -267,5 +270,5 @@ legend.Draw()
 
 c1.Update()
 
-c1.SaveAs("%s.pdf" % (c1.GetName()+"_1M_"+str(options.n)))
+c1.SaveAs("hists/%s.pdf" % (c1.GetName()+"_1M_"+str(options.n)))
 
