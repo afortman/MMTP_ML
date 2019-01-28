@@ -80,6 +80,8 @@ def main():
         
         _ = tr.GetEntry(ent)
         
+        if ent % 10000 == 0:
+            print("Event "+str(ent)+"/"+str(tr.GetEntries()))
         
     ######### Choose the trigger with the maximum number of real muon hits
         realmuon = list(tr.N_muon)
@@ -145,7 +147,7 @@ def main():
                 zpos.append( zplanes[plane] )
                 xpos.append( strip*0.4 )
         gr = TGraph(len(xpos),zpos,xpos)
-        gr.Fit("pol1")
+        gr.Fit("pol1","Q")
         fit = gr.GetFunction("pol1")
         chi2 = fit.GetChisquare()
         NDF = fit.GetNDF()
