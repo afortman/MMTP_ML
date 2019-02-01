@@ -7,6 +7,8 @@ from random import randint
 
 ######### run like python -i projections_ML.py -n 1M --layers 4X4UV -e 100
 
+f_out = ROOT.TFile("projection_plots.root", "recreate")
+
 from optparse import OptionParser
 parser = OptionParser()
 
@@ -42,6 +44,8 @@ gStyle.SetPadLeftMargin(0.1);
 gStyle.SetPadBottomMargin(0.1)
 gStyle.SetPadRightMargin(0.18);
 gStyle.SetPadTopMargin(0.1)
+gStyle.SetTitleX(0.3);
+gStyle.SetTitleAlign(23);
 
 
 
@@ -51,8 +55,12 @@ samples = [("sig","Signal"),("bkg","Background")]
 
 
 MLlist = ["DNN","BDT","MLP"]
+#MLlist = ["DNN"]
 
 for ML in MLlist:
+    
+    d_out = f_out.mkdir("ProjectionPlots_"+ML)
+
     TMVA.Tools.Instance()
     reader = ROOT.TMVA.Reader()
 
@@ -77,12 +85,7 @@ for ML in MLlist:
                     allplanes.remove(planex)
                     allplanes.remove(planey)
                     otherplanes = allplanes
-                    if sample[0]=="sig":
-                        for plane in otherplanes:
-                            branches[plane[0]][0] = 0.0
-                    elif sample[0]=="bkg":
-                        for plane in otherplanes:
-                            branches[plane[0]][0] = float(randint(0, 11))
+
 
 
                     ########## set up arrays for plotting
@@ -95,7 +98,25 @@ for ML in MLlist:
                         branches[planey[0]][0] = float(strip1)
                         for strip2 in range(0,12):
                             branches[planex[0]][0] = float(strip2)
-                            MLscore = reader.EvaluateMVA( ML )
+                            
+                             ###### set other 6 dimensions
+                            
+                            if sample[0]=="sig":
+                                scores = []
+                                for s in range(0,12):
+                                    for plane in otherplanes:
+                                        branches[plane[0]][0] = float(s)
+                                    scores.append( reader.EvaluateMVA( ML ) )
+                                MLscore = sum(scores)/float(len(scores))
+
+                            elif sample[0]=="bkg":
+                                scores = []
+                                for b in range(0,1000):
+                                    for plane in otherplanes:
+                                        branches[plane[0]][0] = float(randint(0, 11))
+                                    scores.append( reader.EvaluateMVA( ML ) )
+                                MLscore = sum(scores)/float(len(scores))
+                            
                             plane_y.append( float(strip1) )
                             plane_x.append( float(strip2) )
                             MLscores.append( MLscore )
@@ -112,6 +133,8 @@ for ML in MLlist:
                     gr.GetZaxis().SetTitle( ML+" score" )
                     gr.GetZaxis().SetTitleOffset(1.2)
 
+                    d_out.cd()
+                    c.Write()
                     c.SaveAs(folder+"/%s.pdf" % (c.GetName()))
 
     
