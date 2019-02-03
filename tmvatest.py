@@ -15,19 +15,25 @@ parser.add_option('-e', type='string', action='store',
                   dest='eff',
                   help='hit efficiency')
 
+parser.add_option('--name', type='string', action='store',
+                  default= '',
+                  dest='name',
+                  help='suffix')
+
+
 (options, args) = parser.parse_args()
 argv = []
 
+name = str(options.name)
 
-
-inputFile_sig = TFile.Open("/home/net3/afortman/projects/hotpot/oct_sim/efftesting/hazel_both_smearf_1M_35ns_e"+str(options.eff)+".root")
-inputFile_bkg = TFile.Open("/home/net3/afortman/projects/hotpot/oct_sim/efftesting/hazel_bkg_smearf_1M_35ns_e"+str(options.eff)+".root")
-outputFile = TFile.Open("TMVAOutput_sigbkg_e"+str(options.eff)+".root", "RECREATE")
+inputFile_sig = TFile.Open("/home/net3/afortman/projects/hotpot/oct_sim/layertests/hazel_both_smearf_1M_35ns_e100_split.root")
+inputFile_bkg = TFile.Open("/home/net3/afortman/projects/hotpot/oct_sim/layertests/hazel_bkg_smearf_"+name+"_train.root")
+outputFile = TFile.Open("TMVAOutput_"+name+".root", "RECREATE")
 
 factory = TMVA.Factory("TMVAClassification", outputFile,
                        "!V:!Silent:Color:!DrawProgressBar:AnalysisType=Classification" )
 
-loader = TMVA.DataLoader("dataset_e"+str(options.eff))
+loader = TMVA.DataLoader("dataset_"+name)
 
 #loader.AddVariable("EventNumHazel",'I')
 #loader.AddVariable("EventNumGingko",'I')
@@ -47,14 +53,14 @@ loader.AddVariable("Hit_plane7",'I')
 #loader.AddVariable("dtheta")
 #loader.AddVariable("chi2")
 
-tsignal = inputFile_sig.Get("hazel")
+tsignal = inputFile_sig.Get("hazel_train")
 tbackground = inputFile_bkg.Get("hazel")
 
 loader.AddSignalTree(tsignal)
 loader.AddBackgroundTree(tbackground)
 #loader.PrepareTrainingAndTestTree(TCut(""),"nTrain_Signal=1000:nTrain_Background=1000:SplitMode=Random:NormMode=NumEvents:!V")
-#loader.PrepareTrainingAndTestTree(TCut("Hit_n==8"),"SplitMode=Random:NormMode=NumEvents:!V")
-loader.PrepareTrainingAndTestTree(TCut(""),"SplitMode=Random:NormMode=NumEvents:!V")
+loader.PrepareTrainingAndTestTree(TCut("Hit_n==8"),"nTest_Signal=1000:nTest_Background=1000:SplitMode=Random:NormMode=NumEvents:!V")
+#loader.PrepareTrainingAndTestTree(TCut(""),"SplitMode=Random:NormMode=NumEvents:!V")
 
 # General layout
 layoutString = TString("Layout=TANH|128,TANH|128,TANH|128,LINEAR");
@@ -93,7 +99,7 @@ factory.BookMethod(loader,TMVA.Types.kBDT, "BDT" )
 ##Multi-Layer Perceptron (Neural Network)
 factory.BookMethod(loader, TMVA.Types.kMLP, "MLP","!H:!V:NeuronType=tanh:VarTransform=N:NCycles=100:HiddenLayers=N+5:TestRate=5:!UseRegulator" )
 
-factory.BookMethod(loader, TMVA.Types.kKNN, "kNN" );
+#factory.BookMethod(loader, TMVA.Types.kKNN, "kNN" );
 
 
 # CPU implementation, using BLAS
@@ -107,4 +113,4 @@ factory.EvaluateAllMethods()
 
 c = factory.GetROCCurve(loader)
 c.Draw()
-c.SaveAs("dataset_e"+str(options.eff)+"/roc_TMVA_1M_35ns_e"+str(options.eff)+".pdf")
+c.SaveAs("dataset_"+name+"/roc_TMVA_1M_"+name+".pdf")

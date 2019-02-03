@@ -17,6 +17,11 @@ parser.add_option('-n', type='string', action='store',
                   dest='n',
                   help='number of events to evaluate over, 10k or 100k or 1M etc')
 
+parser.add_option('--layers', type='string', action='store',
+                  default= '',
+                  dest='layers',
+                  help='suffix')
+
 #parser.add_option('-e', type='string', action='store',
 #                  default= '100',
 #                  dest='eff',
@@ -30,6 +35,7 @@ parser.add_option('-n', type='string', action='store',
 (options, args) = parser.parse_args()
 argv = []
 
+folder = "varplots_"+str(options.n)+"_"+str(options.layers)
 
 #ML = str(options.ML)
 #eff = options.eff
@@ -47,19 +53,27 @@ planes = xlist + uvlist
 
 ########### START LOOP OVER EFFICIENCIES ###########
 
-effs = [90,91,92,93,94,95,96,97,98,99,100]
+#effs = [90,91,92,93,94,95,96,97,98,99,100]
+effs = [100]
 
 for eff in effs:
     
     TMVA.Tools.Instance()
     reader = ROOT.TMVA.Reader()
 
-    fsig = ROOT.TFile("efftesting/hazel_both_smearf_"+str(options.n)+"_35ns_e"+str(eff)+".root")
-    fbkg = ROOT.TFile("efftesting/hazel_bkg_smearf_"+str(options.n)+"_35ns_e"+str(eff)+".root")
+    fsig = ROOT.TFile("layertests/hazel_both_smearf_"+str(options.n)+"_35ns_e"+str(eff)+"_split.root")
+    fbkg = ROOT.TFile("layertests/hazel_bkg_smearf_"+str(options.n)+"_"+str(options.layers)+"_test.root")
 
-    tr_sig   = fsig.Get("hazel")
+    tr_sig   = fsig.Get("hazel_test")
     tr_bkg   = fbkg.Get("hazel")
 
+    #fsig = ROOT.TFile("layertests/hazel_both_smearf_"+str(options.n)+"_35ns_e"+str(eff)+".root")
+    #fbkg = ROOT.TFile("layertests/hazel_bkg_smearf_"+str(options.layers)+".root")
+    
+    #tr_sig   = fsig.Get("hazel")
+    #tr_bkg   = fbkg.Get("hazel_test")
+    
+    
     branches = {}
     for branch in tr_sig.GetListOfBranches():
         branchName = branch.GetName()
@@ -75,7 +89,7 @@ for eff in effs:
     MLlist = ["DNN","BDT","MLP"]
     for ML in MLlist:
         
-        reader.BookMVA( ML,"dataset_e"+str(eff)+"/weights/TMVAClassification_"+ML+".weights.xml")
+        reader.BookMVA( ML,"dataset_"+str(options.n)+"_"+str(options.layers)+"/weights/TMVAClassification_"+ML+".weights.xml")
 
         ### Get ML scores and hit planes info
 
@@ -91,25 +105,26 @@ for eff in effs:
 
         for ent1 in range(tr_sig.GetEntries()):
             _ = tr_sig.GetEntry(ent1)
-            branches["Hit_plane0"][0] = tr_sig.Hit_plane0
-            branches["Hit_plane1"][0] = tr_sig.Hit_plane1
-            branches["Hit_plane2"][0] = tr_sig.Hit_plane2
-            branches["Hit_plane3"][0] = tr_sig.Hit_plane3
-            branches["Hit_plane4"][0] = tr_sig.Hit_plane4
-            branches["Hit_plane5"][0] = tr_sig.Hit_plane5
-            branches["Hit_plane6"][0] = tr_sig.Hit_plane6
-            branches["Hit_plane7"][0] = tr_sig.Hit_plane7
-            
-            sigX0.append( branches["Hit_plane0"][0] )
-            sigX1.append( branches["Hit_plane1"][0] )
-            sigX2.append( branches["Hit_plane6"][0] )
-            sigX3.append( branches["Hit_plane7"][0] )
-            sigU1.append( branches["Hit_plane2"][0] )
-            sigU2.append( branches["Hit_plane4"][0] )
-            sigV1.append( branches["Hit_plane3"][0] )
-            sigV2.append( branches["Hit_plane5"][0] )
-            
-            sigML.append( reader.EvaluateMVA( ML ) )
+            if tr_sig.Hit_n == 8:
+                branches["Hit_plane0"][0] = tr_sig.Hit_plane0
+                branches["Hit_plane1"][0] = tr_sig.Hit_plane1
+                branches["Hit_plane2"][0] = tr_sig.Hit_plane2
+                branches["Hit_plane3"][0] = tr_sig.Hit_plane3
+                branches["Hit_plane4"][0] = tr_sig.Hit_plane4
+                branches["Hit_plane5"][0] = tr_sig.Hit_plane5
+                branches["Hit_plane6"][0] = tr_sig.Hit_plane6
+                branches["Hit_plane7"][0] = tr_sig.Hit_plane7
+                
+                sigX0.append( branches["Hit_plane0"][0] )
+                sigX1.append( branches["Hit_plane1"][0] )
+                sigX2.append( branches["Hit_plane6"][0] )
+                sigX3.append( branches["Hit_plane7"][0] )
+                sigU1.append( branches["Hit_plane2"][0] )
+                sigU2.append( branches["Hit_plane4"][0] )
+                sigV1.append( branches["Hit_plane3"][0] )
+                sigV2.append( branches["Hit_plane5"][0] )
+                
+                sigML.append( reader.EvaluateMVA( ML ) )
 
 
         bkgML = []
@@ -179,9 +194,12 @@ for eff in effs:
         #24. N(UV hits)
         #25. N(U hits)
         #26. N(V hits)
-
-        sig_name_dict = {"sig01":"Signal X0", "sig02":"Signal X1", "sig03":"Signal X2", "sig04":"Signal X3", "sig05":"Signal U1", "sig06":"Signal U2", "sig07":"Signal V1", "sig08":"Signal V2", "sig09":"Signal X0 - X1", "sig10":"Signal X2 - X3", "sig11":"Signal X0 - (X1 + X2 + X3)/3", "sig12":"Signal X1 - (X0 + X2 + X3)/3", "sig13":"Signal X2 - (X0 + X1 + X3)/3", "sig14":"Signal X3 - (X0 + X1 + X2)/3", "sig15":"Signal (X0 + X1)/2 - (X2 + X3)/2", "sig16":"Signal (X0 + X1 + X2 + X3)/4", "sig17":"Signal U1 - U2", "sig18":"Signal V1 - V2", "sig19":"Signal (U1 + U2)/2 - (V1 + V2)/2", "sig20":"Signal (U1 + U2 + V1 + V2)/4", "sig21":"Signal (X0 + X1 + X2 + X3)/4  - (U1 + U2 + V1 + V2)/4", "sig22":"Signal N(hits)", "sig23":"Signal N(X hits)", "sig24":"Signal N(UV hits)", "sig25":"Signal N(U hits)", "sig26":"Signal N(V hits)"}
-        bkg_name_dict = {"bkg01":"Background X0", "bkg02":"Background X1", "bkg03":"Background X2", "bkg04":"Background X3", "bkg05":"Background U1", "bkg06":"Background U2", "bkg07":"Background V1", "bkg08":"Background V2", "bkg09":"Background X0 - X1", "bkg10":"Background X2 - X3", "bkg11":"Background X0 - (X1 + X2 + X3)/3", "bkg12":"Background X1 - (X0 + X2 + X3)/3", "bkg13":"Background X2 - (X0 + X1 + X3)/3", "bkg14":"Background X3 - (X0 + X1 + X2)/3", "bkg15":"Background (X0 + X1)/2 - (X2 + X3)/2", "bkg16":"Background (X0 + X1 + X2 + X3)/4", "bkg17":"Background U1 - U2", "bkg18":"Background V1 - V2", "bkg19":"Background (U1 + U2)/2 - (V1 + V2)/2", "bkg20":"Background (U1 + U2 + V1 + V2)/4", "bkg21":"Background (X0 + X1 + X2 + X3)/4  - (U1 + U2 + V1 + V2)/4", "bkg22":"Background N(hits)", "bkg23":"Background N(X hits)", "bkg24":"Background N(UV hits)", "bkg25":"Background N(U hits)", "bkg26":"Background N(V hits)"}
+        sig_planes = ["sig01","sig02","sig03","sig04","sig05","sig06","sig07","sig08"]
+        bkg_planes = ["bkg01","bkg02","bkg03","bkg04","bkg05","bkg06","bkg07","bkg08"]
+        sig_nhit = ["sig22","sig23","sig24","sig25","sig26"]
+        bkg_nhit = ["bkg22","bkg23","bkg24","bkg25","bkg26"]
+        sig_name_dict = {"sig01":"Signal X0", "sig02":"Signal X1", "sig03":"Signal X2", "sig04":"Signal X3", "sig05":"Signal U0", "sig06":"Signal U1", "sig07":"Signal V0", "sig08":"Signal V1", "sig09":"Signal X0 - X1", "sig10":"Signal X2 - X3", "sig11":"Signal X0 - (X1 + X2 + X3)/3", "sig12":"Signal X1 - (X0 + X2 + X3)/3", "sig13":"Signal X2 - (X0 + X1 + X3)/3", "sig14":"Signal X3 - (X0 + X1 + X2)/3", "sig15":"Signal (X0 + X1)/2 - (X2 + X3)/2", "sig16":"Signal (X0 + X1 + X2 + X3)/4", "sig17":"Signal U0 - U1", "sig18":"Signal V0 - V1", "sig19":"Signal (U0 + U1)/2 - (V0 + V1)/2", "sig20":"Signal (U0 + U1 + V0 + V1)/4", "sig21":"Signal (X0 + X1 + X2 + X3)/4  - (U0 + U1 + V0 + V1)/4", "sig22":"Signal N(hits)", "sig23":"Signal N(X hits)", "sig24":"Signal N(UV hits)", "sig25":"Signal N(U hits)", "sig26":"Signal N(V hits)"}
+        bkg_name_dict = {"bkg01":"Background X0", "bkg02":"Background X1", "bkg03":"Background X2", "bkg04":"Background X3", "bkg05":"Background U0", "bkg06":"Background U1", "bkg07":"Background V0", "bkg08":"Background V1", "bkg09":"Background X0 - X1", "bkg10":"Background X2 - X3", "bkg11":"Background X0 - (X1 + X2 + X3)/3", "bkg12":"Background X1 - (X0 + X2 + X3)/3", "bkg13":"Background X2 - (X0 + X1 + X3)/3", "bkg14":"Background X3 - (X0 + X1 + X2)/3", "bkg15":"Background (X0 + X1)/2 - (X2 + X3)/2", "bkg16":"Background (X0 + X1 + X2 + X3)/4", "bkg17":"Background U0 - U1", "bkg18":"Background V0 - V1", "bkg19":"Background (U0 + U1)/2 - (V0 + V1)/2", "bkg20":"Background (U0 + U1 + V0 + V1)/4", "bkg21":"Background (X0 + X1 + X2 + X3)/4  - (U0 + U1 + V0 + V1)/4", "bkg22":"Background N(hits)", "bkg23":"Background N(X hits)", "bkg24":"Background N(UV hits)", "bkg25":"Background N(U hits)", "bkg26":"Background N(V hits)"}
 
 
 
@@ -193,7 +211,7 @@ for eff in effs:
         sigcanvs = {}
         bkgcanvs = {}
 
-        minMLsig = 0.99
+        minMLsig = 0.85
         if ML == "BDT":
             minMLsig = -1.0
         minMLbkg = 0.0
@@ -203,7 +221,12 @@ for eff in effs:
         canvstring = "_"+ML+"_"+str(options.n)+"_e"+str(eff)
 
         for name in sig_name_dict:
-            hsig = TH2F( name, sig_name_dict[name] +" vs "+ML+" score", 100, minMLsig, 1.0, 31, -15.5, 15.5)
+            if name in sig_planes:
+                hsig = TH2F( name, sig_name_dict[name] +" vs "+ML+" score", 100, minMLsig, 1.0, 17, -1.5, 15.5)
+            elif name in sig_nhit:
+                hsig = TH2F( name, sig_name_dict[name] +" vs "+ML+" score", 100, minMLsig, 1.0, 9, 0.5, 9.5)
+            else:
+                hsig = TH2F( name, sig_name_dict[name] +" vs "+ML+" score", 100, minMLsig, 1.0, 31, -15.5, 15.5)
             hsig.GetXaxis().SetTitle( ML+" Score")
             hsig.GetYaxis().SetTitle( sig_name_dict[name] )
             sighists[name] = hsig
@@ -211,7 +234,12 @@ for eff in effs:
             sigcanvs[name] = c_sig
 
         for name in bkg_name_dict:
-            hbkg = TH2F( name, bkg_name_dict[name] +" vs "+ML+" score", 100, minMLbkg, 1.0, 31, -15.5, 15.5)
+            if name in bkg_planes:
+                hbkg = TH2F( name, bkg_name_dict[name] +" vs "+ML+" score", 100, minMLbkg, 1.0, 17, -1.5, 15.5)
+            elif name in bkg_nhit:
+                hbkg = TH2F( name, bkg_name_dict[name] +" vs "+ML+" score", 100, minMLbkg, 1.0, 9, 0.5, 9.5)
+            else:
+                hbkg = TH2F( name, bkg_name_dict[name] +" vs "+ML+" score", 100, minMLbkg, 1.0, 31, -15.5, 15.5)
             hbkg.GetXaxis().SetTitle( ML+" Score")
             hbkg.GetYaxis().SetTitle( bkg_name_dict[name] )
             bkghists[name] = hbkg
@@ -353,14 +381,14 @@ for eff in effs:
         for name in sig_name_dict:
             c = sigcanvs[name]
             c.cd()
-            sighists[name].Draw("CONTZ")
-            c.SaveAs("varplots/%s.pdf" % (c.GetName()))
+            sighists[name].Draw("COLZ")
+            c.SaveAs(folder+"/%s.pdf" % (c.GetName()))
 
         for name in bkg_name_dict:
             c = bkgcanvs[name]
             c.cd()
-            bkghists[name].Draw("CONTZ")
-            c.SaveAs("varplots/%s.pdf" % (c.GetName()))
+            bkghists[name].Draw("COLZ")
+            c.SaveAs(folder+"/%s.pdf" % (c.GetName()))
 
 
     print("Efficiency = "+str(eff)+"%")
