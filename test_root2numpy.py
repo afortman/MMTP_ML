@@ -1,4 +1,5 @@
 """
+http://lcginfo.cern.ch/release/94python3/
 https://github.com/scikit-hep/uproot
 """
 import sys
