@@ -124,7 +124,7 @@ def main():
 
     c = factory.GetROCCurve(loader)
     c.Draw()
-    c.SaveAs("dataset0"/roc_TMVA_smear0.pdf")
+    c.SaveAs("dataset0/roc_TMVA_smear0.pdf")
 
 if __name__ == "__main__":
     main()
